@@ -54,24 +54,31 @@ class PrismPlayer extends VideoPlayer {
             }
         };
 
-        // observing should be before first loading of video
-        new ClassChangeObserver(PrismPlayer.playerStateClassNames['loading'],
-            (appeared, _, observer) => {
-                if (!appeared) {
-                    observer.disconnect();
-                    onFirstLoaded();
-                    this.dispatchEvent(new Event('firstloaded'));
-                }
-            }).observe(this.element);
+        if (this.isState('loading')) {
+            new ClassChangeObserver(PrismPlayer.playerStateClassNames['loading'],
+                (appeared, _, observer) => {
+                    if (!appeared) {
+                        observer.disconnect();
+                        onFirstLoaded();
+                        this.dispatchEvent(new Event('firstloaded'));
+                    }
+                }).observe(this.element);
+        } else {
+            onFirstLoaded();
+        }
 
-        new MutationObserver((mutationList, observer) => {
-            for (const mutation of mutationList) {
-                if (mutation.target.src) {
-                    observer.disconnect();
-                    onSrcLoaded();
+        if (this.query('video').src) {
+            onSrcLoaded();
+        } else {
+            new MutationObserver((mutationList, observer) => {
+                for (const mutation of mutationList) {
+                    if (mutation.target.src) {
+                        observer.disconnect();
+                        onSrcLoaded();
+                    }
                 }
-            }
-        }).observe(this.query('video'), { attributeFilter: ['src'] });
+            }).observe(this.query('video'), { attributeFilter: ['src'] });
+        }
     }
 
     query(key) {
